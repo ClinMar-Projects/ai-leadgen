@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/lead/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "prerender-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/lead/route.js"
+      ],
+      "name": "app/api/lead/route",
+      "page": "/api/lead/route",
+      "matchers": [
+        {
+          "regexp": "^/api/lead$",
+          "originalSource": "/api/lead"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "environments": {
+        "previewModeId": "a2c1d3107ac0fe60b1ee508f9621d209",
+        "previewModeSigningKey": "21b9c23ffee4d8f443f2e379d63a4ac164635f366c84a40c2c600aa523ec34c9",
+        "previewModeEncryptionKey": "11badb179b6fd600104dd10dc5fecdae6d4beb65221a1cda333cba54daf06ffd"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}
