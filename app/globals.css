@@ -1,0 +1,161 @@
+/*
+ * Minimal global stylesheet.  Defines color variables and basic
+ * element styles.  You can customise these values to match your brand
+ * guidelines.  The utility classes (e.g., .input, .button, .card)
+ * provide consistent spacing and borders across the site.
+ */
+:root {
+  --card: #ffffff;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  /* subtle peach background similar to the Olivia landing page */
+  background: linear-gradient(#fff7f2, #ffffff);
+  color: #1f2937;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: black;
+  color: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+/* Secondary button variant used for back button in chat mode. */
+.button-secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/*
+ * Hero section and button styles inspired by the reference design.  The
+ * hero container centers its content and adds generous vertical
+ * padding.  The gradient-text class applies a two-colour gradient
+ * to emphasise key words.  Buttons are pill-shaped with gradient
+ * and solid colour variants.
+ */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+  gap: 2rem;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #d946ef, #fb923c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px 28px;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 1rem;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.btn-pill:hover {
+  opacity: 0.9;
+}
+.btn-gradient {
+  background: linear-gradient(90deg, #d946ef, #fb923c);
+}
+.btn-blue {
+  background: #2faaff;
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Constrain the main content area and add padding around it. */
+.container {
+  max-width: 60rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2rem 1rem;
+}
+
+/* Loading spinner used during the processing state.  It animates by
+ * rotating a coloured border around a circle.  The top and right
+ * edges use gradient colours reminiscent of the hero buttons. */
+.spinner {
+  width: 120px;
+  height: 120px;
+  border: 8px solid #f3f4f6;
+  border-top-color: #d946ef;
+  border-right-color: #fb923c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Simple stack and row utilities to replace Tailwind spacing classes.
+ * `.stack` lays out children vertically and adds a medium gap between them.
+ * `.stack-small` uses a smaller gap.  `.row` arranges children
+ * horizontally with equal gaps and wraps on small screens.
+ */
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+.stack > * + * {
+  margin-top: 1.5rem;
+}
+.stack-small {
+  display: flex;
+  flex-direction: column;
+}
+.stack-small > * + * {
+  margin-top: 0.75rem;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
