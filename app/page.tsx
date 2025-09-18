@@ -178,8 +178,10 @@ export default function Page() {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
-    // Add the user's message to the history
-    const newHistory = [...messages, { role: "user", content: trimmed }];
+    // Create a properly typed message and append to the history.  We
+    // explicitly annotate the role to satisfy the Message type.
+    const newMsg: Message = { role: "user", content: trimmed };
+    const newHistory: Message[] = [...messages, newMsg];
     setMessages(newHistory);
     setInput("");
     // Ask the assistant for the next question or final answer
