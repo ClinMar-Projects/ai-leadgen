@@ -22,7 +22,7 @@ type Message = {
  * streaming answer, and a footer with a disclaimer.
  */
 export default function Page() {
-  const [stage, setStage] = useState<"welcome" | "type" | "talk">(
+  const [stage, setStage] = useState<"welcome" | "type" | "talk-setup" | "talk">(
     "welcome"
   );
   // Maintain the conversation history
@@ -188,6 +188,31 @@ export default function Page() {
     await askAssistant(newHistory);
   }
 
+  /**
+   * Request microphone permission from the browser.  This will prompt
+   * the user to grant access.  If granted, we transition to the talk
+   * stage and begin the conversation.  If denied, we show an alert
+   * explaining that microphone access is required.  On Safari and
+   * unsupported browsers, getUserMedia may not be available.
+   */
+  async function requestMicAccess() {
+    if (typeof navigator === 'undefined') {
+      alert('Microphone access is not supported in this environment.');
+      return;
+    }
+    try {
+      // Request audio-only access
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Permission granted; proceed to talk stage
+      setStage('talk');
+    } catch (err) {
+      console.error(err);
+      alert(
+        'Microphone access was denied. Please allow microphone permissions or use text input instead.'
+      );
+    }
+  }
+
   // Begin listening for a spoken answer from the user.  Uses the
   // Web Speech API (SpeechRecognition).  If the browser does not
   // support speech recognition, notify the user gracefully.  When
@@ -294,7 +319,7 @@ export default function Page() {
             <button
               className="btn-pill btn-gradient"
               type="button"
-              onClick={() => setStage('talk')}
+              onClick={() => setStage('talk-setup')}
             >
               🎤 Talk to Me
             </button>
@@ -308,6 +333,78 @@ export default function Page() {
           </div>
           <p className="disclaimer" style={{ textAlign: 'center' }}>
             Your information is processed securely to help me understand your symptoms
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Render microphone permission screen when the user selects talk-to-me
+  if (stage === 'talk-setup') {
+    return (
+      <div className="hero">
+        <div className="stack-small">
+          <p
+            style={{
+              letterSpacing: '0.1em',
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
+            AI Pain Advisor
+          </p>
+          <h1
+            style={{ fontSize: '2.5rem', fontWeight: 700, lineHeight: 1.2, fontFamily: "Georgia, 'Times New Roman', serif" }}
+          >
+            Hi, I’m Olivia.<br /> I’ll help you understand your{' '}
+            <span className="gradient-text">shoulder or knee pain</span>
+          </h1>
+        </div>
+        <div
+          className="card stack-small"
+          style={{ width: '100%', maxWidth: '36rem', alignItems: 'center' }}
+        >
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              textAlign: 'center',
+              marginBottom: '0.75rem',
+            }}
+          >
+            I’ll need microphone access to hear you
+          </h2>
+          <p style={{ fontSize: '1rem', color: '#374151', textAlign: 'center', marginBottom: '1.5rem' }}>
+            When you click the button below, your browser will ask for permission to access your microphone. This is needed so I can hear what you’re telling me.
+          </p>
+          <button
+            type="button"
+            className="btn-pill btn-gradient"
+            onClick={requestMicAccess}
+          >
+            🎤 Enable Microphone
+          </button>
+          <button
+            type="button"
+            className="button button-link"
+            style={{ marginTop: '1rem' }}
+            onClick={() => {
+              // Reset conversation state and return to welcome
+              setStage('welcome');
+              setMessages([]);
+              setCurrentQuestion('');
+              setFinalAnswer('');
+              setProcessingStep(null);
+              setInput('');
+              setIsRecording(false);
+            }}
+          >
+            Go Back
+          </button>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', textAlign: 'center', marginTop: '1.5rem' }}>
+            You can also use text input if you prefer not to use your microphone
           </p>
         </div>
       </div>
