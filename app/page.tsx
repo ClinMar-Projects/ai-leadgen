@@ -35,6 +35,8 @@ export default function Page() {
   const [input, setInput] = useState("");
   // Whether the system is waiting for a response
   const [loading, setLoading] = useState(false);
+  // Whether the browser is currently listening for speech input
+  const [isRecording, setIsRecording] = useState(false);
   // Ref for scrolling the answer area (not used currently but kept for potential future use)
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -119,8 +121,8 @@ export default function Page() {
 
   // Start the conversation when the user enters the typing flow
   useEffect(() => {
-    if (stage === "type" && messages.length === 0) {
-      // initialise with the system prompt and the first assistant question
+    // When entering either the type or talk stage, initialise the conversation
+    if ((stage === "type" || stage === "talk") && messages.length === 0) {
       const initialMsgs: Message[] = [
         { role: "system", content: CONVO_PROMPT },
         { role: "assistant", content: INITIAL_QUESTION },
@@ -157,9 +159,14 @@ export default function Page() {
         setCurrentQuestion(fullMsg);
       }
     } catch (err) {
-      // If there's an error, show a generic message
-      setFinalAnswer(
-        "Sorry, something went wrong. Please try again later."
+      // If there's an error, do not transition to the final screen.
+      // Instead, notify the user that something went wrong and allow
+      // them to try again.  We reset the current question to an error
+      // prompt and leave finalAnswer unset so the conversation can
+      // continue.
+      console.error(err);
+      setCurrentQuestion(
+        "Sorry, something went wrong. Please try again."
       );
     } finally {
       setLoading(false);
@@ -171,18 +178,59 @@ export default function Page() {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
-
-    // Create a new message with the proper type
-    const newMsg: Message = { role: "user", content: trimmed };
-
-    // Build a new history array with the correct type
-    const newHistory: Message[] = [...messages, newMsg];
+    // Add the user's message to the history
+    const newHistory = [...messages, { role: "user", content: trimmed }];
     setMessages(newHistory);
-
     setInput("");
+    // Ask the assistant for the next question or final answer
     await askAssistant(newHistory);
   }
 
+  // Begin listening for a spoken answer from the user.  Uses the
+  // Web Speech API (SpeechRecognition).  If the browser does not
+  // support speech recognition, notify the user gracefully.  When
+  // speech is recognised, the recognised text is appended to the
+  // conversation history and sent to the assistant for the next
+  // question or final answer.  While listening, a visual indicator
+  // is shown via the isRecording state.
+  function startRecording() {
+    // Only attempt to start recording if we are in the talk stage and
+    // not already recording.
+    if (stage !== "talk" || isRecording) return;
+    // Retrieve SpeechRecognition constructor from the window
+    const SpeechRecognition =
+      (typeof window !== 'undefined' && (window as any).SpeechRecognition) ||
+      (typeof window !== 'undefined' && (window as any).webkitSpeechRecognition);
+    if (!SpeechRecognition) {
+      alert("Sorry, your browser doesn't support speech recognition.");
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onstart = () => setIsRecording(true);
+      recognition.onerror = () => setIsRecording(false);
+      recognition.onend = () => setIsRecording(false);
+      recognition.onresult = async (event: any) => {
+        const transcript = event.results[0][0].transcript.trim();
+        if (transcript) {
+          // Update the display input for the user to see what was recognised
+          setInput(transcript);
+          const newMsg: Message = { role: 'user', content: transcript };
+          const newHistory: Message[] = [...messages, newMsg];
+          setMessages(newHistory);
+          // Send to assistant; do not immediately clear the displayed input so users can see the transcript
+          await askAssistant(newHistory);
+        }
+      };
+      recognition.start();
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while starting speech recognition.");
+    }
+  }
 
   // When a final answer is present and we are in the processing phase,
   // advance through the processing steps automatically.  Each step is
@@ -209,8 +257,10 @@ export default function Page() {
   }, [finalAnswer, processingStep]);
 
   // Render hero section when the user first visits the site.  Once
-  // they select "Type Instead" or "Talk to Me", the stage changes.
-  if (stage === "welcome" || stage === "talk") {
+  // they select "Type Instead" or "Talk to Me", the stage changes.  We
+  // no longer render the hero for the talk stage; instead the talk
+  // stage shares the chat interface with type.
+  if (stage === "welcome") {
     return (
       <div className="hero">
         <div className="stack-small">
@@ -322,55 +372,110 @@ export default function Page() {
         <div className="stack" style={{ alignItems: "center" }}>
           {/* Show the question and input if we are still gathering information */}
           {finalAnswer === "" && currentQuestion && (
-            <div
-              className="card stack-small"
-              style={{ width: "100%", maxWidth: "36rem" }}
-            >
+            stage === "type" ? (
               <div
-                style={{
-                  textTransform: "uppercase",
-                  fontSize: "0.875rem",
-                  letterSpacing: "0.1em",
-                  color: "#9ca3af",
-                }}
+                className="card stack-small"
+                style={{ width: "100%", maxWidth: "36rem" }}
               >
-                Question
-              </div>
-              <div
-                style={{
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  fontSize: "2rem",
-                  fontWeight: 600,
-                  textAlign: "center",
-                }}
-              >
-                {currentQuestion}
-              </div>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your answer here..."
-                style={{
-                  width: "100%",
-                  minHeight: "120px",
-                  padding: "1rem",
-                  fontSize: "1rem",
-                  borderRadius: "12px",
-                  border: "2px solid #c7d2fe",
-                  outline: "none",
-                  resize: "vertical",
-                }}
-              />
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button
-                  type="button"
-                  className="btn-pill btn-gradient"
-                  onClick={handleSubmit}
+                <div
+                  style={{
+                    textTransform: "uppercase",
+                    fontSize: "0.875rem",
+                    letterSpacing: "0.1em",
+                    color: "#9ca3af",
+                  }}
                 >
-                  Submit
-                </button>
+                  Question
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: "2rem",
+                    fontWeight: 600,
+                    textAlign: "center",
+                  }}
+                >
+                  {currentQuestion}
+                </div>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your answer here..."
+                  style={{
+                    width: "100%",
+                    minHeight: "120px",
+                    padding: "1rem",
+                    fontSize: "1rem",
+                    borderRadius: "12px",
+                    border: "2px solid #c7d2fe",
+                    outline: "none",
+                    resize: "vertical",
+                  }}
+                />
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="btn-pill btn-gradient"
+                    onClick={handleSubmit}
+                  >
+                    Submit
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              // Talk interface: show question and a record button
+              <div
+                className="card stack-small"
+                style={{ width: "100%", maxWidth: "36rem" }}
+              >
+                <div
+                  style={{
+                    textTransform: "uppercase",
+                    fontSize: "0.875rem",
+                    letterSpacing: "0.1em",
+                    color: "#9ca3af",
+                  }}
+                >
+                  Question
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: "2rem",
+                    fontWeight: 600,
+                    textAlign: "center",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {currentQuestion}
+                </div>
+                {/* Display the recognised transcript so the user can see what was heard */}
+                {input && (
+                  <div
+                    style={{
+                      fontSize: "1rem",
+                      color: "#374151",
+                      marginBottom: "1rem",
+                      padding: "0.75rem",
+                      background: "#f3f4f6",
+                      borderRadius: "0.75rem",
+                    }}
+                  >
+                    {input}
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="btn-pill btn-gradient"
+                    onClick={startRecording}
+                    disabled={isRecording}
+                  >
+                    {isRecording ? 'Listening…' : '🎤 Record Answer'}
+                  </button>
+                </div>
+              </div>
+            )
           )}
           {/* Once we have a final answer, show the formatted report */}
           {/* When in processing phase, show the processing cards one after another */}
