@@ -143,7 +143,11 @@ export default function Page() {
         body: JSON.stringify({ messages: msgs }),
       });
       if (!res.ok) {
-        throw new Error("Failed to fetch response");
+        // Read any available error text from the response.  This may
+        // include upstream error details (e.g. invalid API key).  Use
+        // a generic message if none is provided.
+        const errText = await res.text().catch(() => "");
+        throw new Error(errText || "Failed to fetch response");
       }
       // Since the API returns plain text, read it directly
       const fullMsg = (await res.text()).trim();
