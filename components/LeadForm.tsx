@@ -8,15 +8,35 @@ import { useState } from "react";
  * /api/lead.  The parent page can include this component below the
  * answer card.
  */
-export default function LeadForm() {
+export type LeadFormProps = {
+  responses: string[];
+  finalAnswer: string;
+  reportTitle: string;
+  questions: string[];
+};
+
+export default function LeadForm({ responses, finalAnswer, reportTitle, questions }: LeadFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const body = { name, email, note };
+    // Include the conversation responses, final answer and report title in the
+    // payload sent to the backend.  These will be forwarded to the
+    // webhook configured in the API route.
+    const body = {
+      name,
+      email,
+      phone,
+      note,
+      responses,
+      finalAnswer,
+      reportTitle,
+      questions,
+    };
     try {
       await fetch("/api/lead", {
         method: "POST",
@@ -50,6 +70,12 @@ export default function LeadForm() {
         placeholder="Email Address *"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        className="input"
+        placeholder="Phone Number *"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
       />
       <textarea
         className="input"

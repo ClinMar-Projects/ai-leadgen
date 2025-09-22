@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 // markup for each icon directly in the processing steps array.  The
 // markup was generated from FontAwesome and includes a style for
 // consistent colouring.
-import CRMForm from "../components/CRMForm";
+import LeadForm from "../components/LeadForm";
 
 // Define a simple message type for the conversation
 type Message = {
@@ -107,10 +107,16 @@ export default function Page() {
   // heuristic looks for certain keywords to decide if urgent care is needed.
   function classifyAnswer(answer: string): { label: string; bg: string; text: string } {
     const lower = answer.toLowerCase();
-    if (/(urgent|doctor|seek|emergency|immediate|red flag)/.test(lower)) {
-      return { label: "Urgent care recommended", bg: "#fecaca", text: "#b91c1c" };
+    // High severity: urgent or medical attention required
+    if (/(urgent|doctor|seek|emergency|immediate|red flag|medical evaluation|hospital)/.test(lower)) {
+      return { label: "Medical evaluation recommended", bg: "#fecaca", text: "#b91c1c" };
     }
-    return { label: "Self-care appropriate", bg: "#d1fae5", text: "#065f46" };
+    // Medium severity: speak with a PT or consult a therapist
+    if (/(speak with|speak to|consult|pt|physical therapist|therapist)/.test(lower)) {
+      return { label: "Speak with a PT", bg: "#fef9c3", text: "#92400e" };
+    }
+    // Default: low severity, self-care is likely appropriate
+    return { label: "Self care appropriate", bg: "#d1fae5", text: "#065f46" };
   }
 
   // State representing the index of the current processing step being
@@ -788,13 +794,32 @@ export default function Page() {
                   <li>• Access to recovery resources and professional advice from Wardell Performance Physical Therapy</li>
                 </ul>
               </div>
-              {/* CRM form for email capture.  Replace the internal lead form with
-                  the CRM-integrated form. */}
+              {/* Lead form for email capture.  Pass the user responses,
+                  final answer and report title so the webhook receives
+                  all relevant information. */}
               <div
                 className="card stack-small"
                 style={{ width: "100%", maxWidth: "36rem", marginTop: "1rem" }}
               >
-                <CRMForm />
+                {(() => {
+                  // Extract only the user messages from the conversation history
+                  const responses: string[] = messages
+                    .filter((m) => m.role === 'user')
+                    .map((m) => m.content);
+                  // Extract only the assistant questions (exclude system prompt and final answer)
+                  const questions: string[] = messages
+                    .filter((m) => m.role === 'assistant' && !m.content.startsWith('FINAL:'))
+                    .map((m) => m.content);
+                  const reportTitle = determineReportTitle(finalAnswer);
+                  return (
+                    <LeadForm
+                      responses={responses}
+                      finalAnswer={finalAnswer}
+                      reportTitle={reportTitle}
+                      questions={questions}
+                    />
+                  );
+                })()}
               </div>
             </>
           )}
