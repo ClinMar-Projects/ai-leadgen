@@ -42,7 +42,7 @@ export default function Page() {
 
   // System prompt describing how the assistant should behave.
   const CONVO_PROMPT =
-    "You are a helpful orthopedic injury assistant. Ask the user a series of specific, clear, concise questions (e.g. location of pain, when it started, severity, activities that make it better or worse) to understand their injury, one at a time. Do not apologise or ask generic questions like 'Can you provide more information'; instead ask targeted questions to gather the details you need. Only ask one question at a time. Once you have enough information to provide insight on what is likely going on and suggest next steps, give your response prefaced with 'FINAL:' and stop asking questions.";
+    "You are a helpful orthopedic injury assistant. Ask the user a series of specific, clear, concise questions (e.g. location of pain, when it started, severity, activities that make it better or worse) to understand their injury, one at a time. Do not apologise or ask generic questions like 'Can you provide more information'; instead ask targeted questions to gather the details you need. Only ask one question at a time. When you have enough information to provide insight on what is likely going on and suggest next steps, you MUST prefix your final answer with the word 'FINAL:' (capital letters, followed by a colon and a space). This prefix is required so the system knows the conversation is over. After providing your 'FINAL:' answer, do not ask any more questions.";
 
   // Predefined first question shown immediately when the conversation starts
   const INITIAL_QUESTION =
@@ -159,9 +159,25 @@ export default function Page() {
       const fullMsg = (await res.text()).trim();
       // Append the assistant's message to the conversation history
       setMessages((prev) => [...prev, { role: "assistant", content: fullMsg }]);
-      // Determine if this is the final answer or a new question
-      if (fullMsg.startsWith("FINAL:")) {
-        setFinalAnswer(fullMsg.replace(/^FINAL:\s*/, "").trim());
+      /*
+       * Determine if this is the final answer or a new question.  In
+       * addition to checking the explicit FINAL: prefix, we also
+       * perform heuristic checks because the model may forget to
+       * include the prefix.  A message is considered final if it
+       * contains no question mark and is relatively long or
+       * comprises multiple sentences.  This captures statements
+       * offering guidance ("I recommend …", etc.) that are not
+       * framed as questions.  We also strip any leading FINAL:
+       * prefix before storing the answer.
+       */
+      const withoutPrefix = fullMsg.replace(/^FINAL:\s*/, "").trim();
+      const looksLikeQuestion = /\?/.test(fullMsg);
+      const sentences = fullMsg.split(/\.\s+/);
+      const looksLikeFinal =
+        fullMsg.startsWith("FINAL:") ||
+        (!looksLikeQuestion && (fullMsg.length > 120 || sentences.length > 1));
+      if (looksLikeFinal) {
+        setFinalAnswer(withoutPrefix);
         setCurrentQuestion("");
         // Kick off the processing sequence.  Start at the first step.
         setProcessingStep(0);
