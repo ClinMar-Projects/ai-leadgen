@@ -9,13 +9,46 @@ import { useState } from "react";
  * answer card.
  */
 export type LeadFormProps = {
+  /**
+   * The array of user responses collected during the conversation.
+   */
   responses: string[];
+  /**
+   * The assistant's final answer without the FINAL: prefix.  This
+   * includes the suggestions and recommendations for the injury.
+   */
   finalAnswer: string;
+  /**
+   * A short report title derived from the final answer, e.g.
+   * "Shoulder Pain Evaluation Report".  Used for labelling the
+   * evaluation card and to infer the pain type on the booking page.
+   */
   reportTitle: string;
+  /**
+   * The list of questions the assistant asked.  Useful for
+   * providing context in downstream workflows.
+   */
   questions: string[];
+  /**
+   * Optional callback invoked after the form submits successfully.
+   * Receives the full payload sent to the webhook so the parent
+   * component can perform post-submit actions such as navigating
+   * to a booking page.  If omitted, the form will simply show a
+   * thank-you message when submission succeeds.
+   */
+  onComplete?: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    note: string;
+    responses: string[];
+    finalAnswer: string;
+    reportTitle: string;
+    questions: string[];
+  }) => void;
 };
 
-export default function LeadForm({ responses, finalAnswer, reportTitle, questions }: LeadFormProps) {
+export default function LeadForm({ responses, finalAnswer, reportTitle, questions, onComplete }: LeadFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -43,7 +76,17 @@ export default function LeadForm({ responses, finalAnswer, reportTitle, question
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      // Mark submission as sent
       setSent(true);
+      // Invoke optional callback so the parent page can navigate
+      if (onComplete) {
+        try {
+          onComplete(body);
+        } catch (err) {
+          // swallow callback errors to avoid blocking UI
+          console.error(err);
+        }
+      }
     } catch (err) {
       console.error(err);
     }
@@ -64,18 +107,21 @@ export default function LeadForm({ responses, finalAnswer, reportTitle, question
         placeholder="Your Name *"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        required
       />
       <input
         className="input"
         placeholder="Email Address *"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        required
       />
       <input
         className="input"
         placeholder="Phone Number *"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
+        required
       />
       <textarea
         className="input"

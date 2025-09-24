@@ -22,9 +22,13 @@ type Message = {
  * streaming answer, and a footer with a disclaimer.
  */
 export default function Page() {
-  const [stage, setStage] = useState<"welcome" | "type" | "talk-setup" | "talk">(
-    "welcome"
-  );
+  const [stage, setStage] = useState<
+    | "welcome"
+    | "type"
+    | "talk-setup"
+    | "talk"
+    | "booking"
+  >("welcome");
   // Maintain the conversation history
   const [messages, setMessages] = useState<Message[]>([]);
   // The current question from the assistant to the user
@@ -124,6 +128,20 @@ export default function Page() {
   // final evaluation report will be shown.  When a non-null number,
   // the corresponding item in `processingSteps` will be rendered.
   const [processingStep, setProcessingStep] = useState<number | null>(null);
+
+  // Booking information captured from the lead form submission.  When
+  // this is non-null and the stage is "booking", we display the
+  // booking page with the scheduler iframe.
+  const [bookingInfo, setBookingInfo] = useState<null | {
+    name: string;
+    email: string;
+    phone: string;
+    note: string;
+    responses: string[];
+    finalAnswer: string;
+    reportTitle: string;
+    questions: string[];
+  }>(null);
 
   // Start the conversation when the user enters the typing flow
   useEffect(() => {
@@ -433,6 +451,95 @@ export default function Page() {
             You can also use text input if you prefer not to use your microphone
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Render booking page after the lead form has been submitted.  This
+  // page invites the user to schedule an appointment with a top
+  // physical therapist.  We derive the pain type from the report
+  // title so the headline references the specific body part (e.g.
+  // shoulder, knee).  The scheduler is embedded via an iframe.
+  if (stage === 'booking' && bookingInfo) {
+    // Infer the body region from the report title (first word)
+    let pain = 'your pain';
+    const lowerTitle = bookingInfo.reportTitle.toLowerCase();
+    if (lowerTitle.includes('shoulder')) pain = 'your shoulder pain';
+    else if (lowerTitle.includes('knee')) pain = 'your knee pain';
+    else if (lowerTitle.includes('back')) pain = 'your back pain';
+    else if (lowerTitle.includes('hip')) pain = 'your hip pain';
+    return (
+      <div className="stack" style={{ alignItems: 'center' }}>
+        <div
+          className="stack-small"
+          style={{ width: '100%', maxWidth: '36rem', textAlign: 'center' }}
+        >
+          <p
+            style={{
+              letterSpacing: '0.1em',
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
+            AI Pain Advisor
+          </p>
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: '2rem',
+              fontWeight: 700,
+            }}
+          >
+            I found the top PT in your area.
+          </h2>
+          <p style={{ fontSize: '1rem', color: '#374151', marginBottom: '1rem' }}>
+            Pro+Kinetix Physical Therapy &amp; Performance has 284 five-star Google reviews.
+          </p>
+          <p style={{ fontSize: '1rem', color: '#374151', marginBottom: '1.5rem' }}>
+            Use the calendar below to book a time to talk to their team about {pain}.
+          </p>
+        </div>
+        {/* Embed the booking widget */}
+        <div
+          className="card"
+          style={{ width: '100%', maxWidth: '36rem', overflow: 'hidden' }}
+        >
+          <iframe
+            src="https://link.clinicalmarketer.com/widget/booking/Zcsc160T8IXDDEOrvVxB"
+            style={{ width: '100%', height: '650px', border: 'none', overflow: 'hidden' }}
+            scrolling="no"
+            id="msgsndr-calendar"
+            title="Appointment Scheduler"
+          ></iframe>
+        </div>
+        {/* Back link to return to the welcome page */}
+        <button
+          type="button"
+          className="button button-secondary"
+          style={{ marginTop: '1.5rem' }}
+          onClick={() => {
+            setStage('welcome');
+            setMessages([]);
+            setCurrentQuestion('');
+            setFinalAnswer('');
+            setProcessingStep(null);
+            setInput('');
+            setIsRecording(false);
+            setBookingInfo(null);
+          }}
+        >
+          ← Back
+        </button>
+        <footer
+          style={{
+            fontSize: '0.75rem',
+            color: '#6b7280',
+            marginTop: '2rem',
+          }}
+        >
+          By using this site, you agree that responses are for information only and not a substitute for professional medical advice.
+        </footer>
       </div>
     );
   }
@@ -833,6 +940,12 @@ export default function Page() {
                       finalAnswer={finalAnswer}
                       reportTitle={reportTitle}
                       questions={questions}
+                      onComplete={(data) => {
+                        // When the lead form submits, capture the
+                        // payload so we can display the booking page.
+                        setBookingInfo(data);
+                        setStage('booking');
+                      }}
                     />
                   );
                 })()}
