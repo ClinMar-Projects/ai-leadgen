@@ -478,7 +478,7 @@ export default function WidgetChatPage() {
               (e.currentTarget as HTMLButtonElement).style.filter = 'none';
             }}
           >
-            Send
+            Submit
           </button>
         </form>
       )}

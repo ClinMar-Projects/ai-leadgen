@@ -1,74 +1,102 @@
 /*
- * Olivia Chat Widget
+ * Olivia Chat Widget (auto-open version)
  *
- * This script injects a floating chat button and iframe into any
- * webpage.  When the button is clicked, the iframe toggles
- * visibility.  The iframe loads the chat widget page hosted on
- * the same origin ("/widget").  The script determines the
- * correct host from its own script URL, making it suitable for
- * deployment on Vercel or other hosting platforms without
- * modification.  To use, include the following script tag on
- * your website (replace the src URL with your deployment URL):
+ * This script injects a floating chat bubble and an iframe into any
+ * webpage.  The chat window opens automatically on page load while
+ * keeping the bubble visible, so visitors can minimise or reopen it.
+ * The bubble and primary buttons use a purple→blue gradient to
+ * match the site's design.
+ *
+ * To use the widget, serve this file at /widget.js and include:
  *
  *   <script src="https://YOUR_DOMAIN/widget.js" async></script>
+ *
+ * The script determines its origin from the script tag and uses
+ * that as the base URL to load the /widget page.
  */
 (function () {
-  // Ensure the script runs in a browser environment
+  // Only run in a browser environment
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
-  // Determine the base URL where this script is hosted.  This
-  // assumes the script is served from /widget.js on your domain.
+  // Determine the base origin where this script is served
   var currentScript = document.currentScript || (function() {
     var scripts = document.getElementsByTagName('script');
     return scripts[scripts.length - 1];
   })();
   var scriptSrc = currentScript && currentScript.src ? currentScript.src : '';
-  var host;
+  var origin;
   try {
-    host = new URL(scriptSrc).origin;
+    origin = new URL(scriptSrc).origin;
   } catch (e) {
-    host = window.location.origin;
+    origin = window.location.origin;
   }
-  // Create the chat button
-  var chatBtn = document.createElement('div');
-  chatBtn.id = 'olivia-chat-bubble';
-  chatBtn.style.position = 'fixed';
-  chatBtn.style.bottom = '20px';
-  chatBtn.style.right = '20px';
-  chatBtn.style.width = '50px';
-  chatBtn.style.height = '50px';
-  chatBtn.style.borderRadius = '50%';
-  chatBtn.style.background = '#fb923c';
-  chatBtn.style.display = 'flex';
-  chatBtn.style.alignItems = 'center';
-  chatBtn.style.justifyContent = 'center';
-  chatBtn.style.color = '#fff';
-  chatBtn.style.fontSize = '24px';
-  chatBtn.style.cursor = 'pointer';
-  chatBtn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-  chatBtn.innerHTML = '💬';
-  // Create the iframe that will host the chat
-  var frame = document.createElement('iframe');
-  frame.id = 'olivia-chat-frame';
-  frame.src = host + '/widget';
-  frame.style.position = 'fixed';
-  frame.style.bottom = '80px';
-  frame.style.right = '20px';
-  frame.style.width = '350px';
-  frame.style.height = '500px';
-  frame.style.border = 'none';
-  frame.style.borderRadius = '12px';
-  frame.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-  frame.style.display = 'none';
-  frame.style.zIndex = '9999';
-  // Toggle the iframe visibility when the button is clicked
-  chatBtn.addEventListener('click', function () {
-    if (frame.style.display === 'none') {
-      frame.style.display = 'block';
-    } else {
-      frame.style.display = 'none';
-    }
+  // Create a gradient chat bubble button
+  var bubble = document.createElement('button');
+  bubble.id = 'olivia-chat-bubble';
+  bubble.setAttribute('type', 'button');
+  bubble.setAttribute('aria-label', 'Toggle chat');
+  Object.assign(bubble.style, {
+    position: 'fixed',
+    right: '20px',
+    bottom: '20px',
+    width: '56px',
+    height: '56px',
+    borderRadius: '9999px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    padding: '0',
+    cursor: 'pointer',
+    color: '#ffffff',
+    fontSize: '24px',
+    backgroundImage: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
+    zIndex: '2147483000',
   });
-  // Append the elements to the document
-  document.body.appendChild(chatBtn);
-  document.body.appendChild(frame);
+  bubble.innerHTML = '💬';
+  // Lighten the bubble on hover
+  bubble.addEventListener('mouseenter', function () {
+    bubble.style.filter = 'brightness(1.08)';
+  });
+  bubble.addEventListener('mouseleave', function () {
+    bubble.style.filter = 'none';
+  });
+  // Create a wrapper for the iframe to control visibility and sizing
+  var wrap = document.createElement('div');
+  wrap.id = 'olivia-chat-wrapper';
+  Object.assign(wrap.style, {
+    position: 'fixed',
+    right: '20px',
+    bottom: '90px',
+    width: '380px',
+    height: '560px',
+    maxWidth: '95vw',
+    maxHeight: '80vh',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    background: '#ffffff',
+    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.2)',
+    zIndex: '2147483000',
+  });
+  // Create the iframe itself
+  var iframe = document.createElement('iframe');
+  iframe.id = 'olivia-chat-frame';
+  iframe.src = origin + '/widget';
+  Object.assign(iframe.style, {
+    border: 'none',
+    width: '100%',
+    height: '100%',
+  });
+  wrap.appendChild(iframe);
+  // Initially open the chat window
+  var open = true;
+  wrap.style.display = open ? 'block' : 'none';
+  // Toggle wrapper visibility when bubble is clicked
+  bubble.addEventListener('click', function () {
+    open = !open;
+    wrap.style.display = open ? 'block' : 'none';
+  });
+  // Append elements to the document body
+  document.body.appendChild(bubble);
+  document.body.appendChild(wrap);
 })();
