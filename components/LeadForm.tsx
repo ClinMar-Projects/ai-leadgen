@@ -130,7 +130,26 @@ export default function LeadForm({ responses, finalAnswer, reportTitle, question
         value={note}
         onChange={(e) => setNote(e.target.value)}
       />
-      <button className="button" type="submit">
+      <button
+        type="submit"
+        style={{
+          backgroundImage: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '9999px',
+          padding: '10px 14px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          boxShadow: '0 4px 10px rgba(39, 96, 255, 0.25)',
+          transition: 'filter 0.15s ease-in-out',
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.08)';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.filter = 'none';
+        }}
+      >
         Submit
       </button>
     </form>

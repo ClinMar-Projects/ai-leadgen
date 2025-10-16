@@ -210,17 +210,36 @@ export default function WidgetChatPage() {
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      {/* Header */}
-      <h3
+      {/* Header: show a gradient bar with a headline and subheadline */}
+      <div
         style={{
-          fontSize: "1.25rem",
-          fontWeight: 700,
-          marginBottom: "0.5rem",
+          backgroundImage: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
+          padding: "0.75rem 1rem",
+          borderRadius: "0.75rem",
+          marginBottom: "0.75rem",
+          color: "#ffffff",
           textAlign: "center",
         }}
       >
-        Chat with Olivia
-      </h3>
+        <h3
+          style={{
+            fontSize: "1rem",
+            fontWeight: 800,
+            margin: 0,
+          }}
+        >
+          Get an Immediate AI Diagnosis
+        </h3>
+        <p
+          style={{
+            fontSize: "0.8rem",
+            margin: "4px 0 0 0",
+            opacity: 0.9,
+          }}
+        >
+          An AI built on 50+ years of Doctor of Physical Therapy Experience
+        </p>
+      </div>
       {/* Show loading spinner while waiting for the assistant */}
       {loading ? (
         <div style={{ textAlign: "center", marginTop: "2rem" }}>
@@ -229,7 +248,8 @@ export default function WidgetChatPage() {
               width: "2rem",
               height: "2rem",
               border: "3px solid #ddd",
-              borderTopColor: "#fb923c",
+            // Use the primary gradient colour for the spinner top to match the site theme
+            borderTopColor: "#6a11cb",
               borderRadius: "50%",
               animation: "spin 1s linear infinite",
               margin: "0 auto",
@@ -441,13 +461,21 @@ export default function WidgetChatPage() {
             type='submit'
             style={{
               marginTop: '0.5rem',
-              background: '#fb923c',
+              backgroundImage: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
               color: '#fff',
               padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
+              borderRadius: '9999px',
               border: 'none',
               fontSize: '0.875rem',
               cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(39, 96, 255, 0.25)',
+              transition: 'filter 0.15s ease-in-out',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.08)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.filter = 'none';
             }}
           >
             Send
